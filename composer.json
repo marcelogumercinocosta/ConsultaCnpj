@@ -1,5 +1,5 @@
 {
-    "name": "marcelogumercinocosta/consultacnpj",
+    "name": "marcelogumercinocosta/ConsultaCnpj",
     "description": "Esta biblioteca realiza a consulta de cnpj na base do web service da REceita Federal",
     "type": "library",
     "license": "MIT",
