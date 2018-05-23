@@ -6,7 +6,7 @@ use JansenFelipe\Utils\Utils as Utils;
 use Exception;
 
 /**
-  <p>##### CLASSE RESPONSAVEL POR REALIZAR A CONSULTA CADASTRAL DE CNPJ NA RECEITA FEDERAL ########</p>
+ * <p>##### CLASSE RESPONSAVEL POR REALIZAR A CONSULTA CADASTRAL DE CNPJ NA RECEITA FEDERAL ########</p> *
  *
  */
 class ConsultaCnpj {

@@ -1,5 +1,5 @@
 {
-    "name": "marcelogumercinocosta/consultacnpj",
+    "name": "MarceloGumercinoCosta/ConsultaCnpj",
     "description": "Esta biblioteca realiza a consulta de cnpj na base do www.receitaws.com.br",
     "type": "library",
     "license": "MIT",
@@ -15,7 +15,7 @@
     
     "autoload":{
         "psr-4":{
-            "MarceloGumercinoCosta\\ConsultaCnpj\\": "src/"
+            "MarceloGumercinoCosta\\": "Source"
         }
     }
 }
