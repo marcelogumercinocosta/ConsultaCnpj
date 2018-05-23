@@ -1,6 +1,6 @@
 <?php
 
-namespace src\ConsultaCnpj;
+namespace MarceloGumercinoCosta\ConsultaCnpj;
 
 use JansenFelipe\Utils\Utils as Utils;
 use Exception;
