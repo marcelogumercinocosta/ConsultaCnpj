@@ -8,8 +8,6 @@ use Exception;
 /**
   <p>##### CLASSE RESPONSAVEL POR REALIZAR A CONSULTA CADASTRAL DE CNPJ NA RECEITA FEDERAL ########</p>
  *
- * @copyright (c) 2018, GUILHERME K. FAGUNDES
- * 
  */
 class ConsultaCnpj {
 
