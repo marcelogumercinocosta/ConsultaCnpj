@@ -2,7 +2,6 @@
 
 namespace MarceloGumercinoCosta\ConsultaCnpj;
 
-use JansenFelipe\Utils\Utils as Utils;
 use Exception;
 
 /**
@@ -14,38 +13,66 @@ class ConsultaCnpj {
     private $urlReceita;
     private $param;
     private $cnpj;
-    
+    private $data;
 
     public function __construct() {
         $this->urlReceita = "https://www.receitaws.com.br/v1/cnpj/";
     }
 
-    
     /**
-     * Valida CNPJ
-     * @param string $attribute
-     * @param string $value
+     * Remove máscara de um texto
+     *
+     * @param  string $texto
+     * @return string (Texto sem a mascara)
+     */
+    protected static function unmask($texto) {
+        return preg_replace('/[\-\|\(\)\/\.\: ]/', '', $texto);
+    }
+
+    /**
+     * Metodo para verificar se um CNPJ é válido
+     *
+     * @param  string $cnpj
      * @return boolean
      */
-    protected function validateCnpj( $value)
-    {
-        $c = preg_replace('/\D/', '', $value);
-        if (strlen($c) != 14 || preg_match("/^{$c[0]}{14}$/", $c)) {
+    public static function isCnpj($cnpj) {
+        $valid = true;
+        $cnpj = str_pad(self::unmask($cnpj), 14, '0', STR_PAD_LEFT);
+
+        if (!ctype_digit($cnpj))
             return false;
+
+        for ($x = 0; $x < 10; $x++) {
+            if ($cnpj == str_repeat($x, 14)) {
+                $valid = false;
+            }
         }
-        $b = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-        for ($i = 0, $n = 0; $i < 12; $n += $c[$i] * $b[++$i]) ;
-        if ($c[12] != ((($n %= 11) < 2) ? 0 : 11 - $n)) {
-            return false;
+
+        if ($valid) {
+            if (strlen($cnpj) != 14) {
+                throw new Exception("Erro - CNPJ incorreto");
+            } else {
+                for ($t = 12; $t < 14; $t++) {
+                    $d = 0;
+                    $c = 0;
+                    for ($m = $t - 7; $m >= 2; $m--, $c++) {
+                        $d += $cnpj{$c} * $m;
+                    }
+                    for ($m = 9; $m >= 2; $m--, $c++) {
+                        $d += $cnpj{$c} * $m;
+                    }
+                    $d = ((10 * $d) % 11) % 10;
+                    if ($cnpj{$c} != $d) {
+                        $valid = false;
+                        break;
+                    }
+                }
+            }
         }
-        for ($i = 0, $n = 0; $i <= 12; $n += $c[$i] * $b[$i++]) ;
-        if ($c[13] != ((($n %= 11) < 2) ? 0 : 11 - $n)) {
-            return false;
-        }
-        return true;
+
+        return $valid;
     }
-    
-    
+
     /**
 
      * 
@@ -53,149 +80,138 @@ class ConsultaCnpj {
      * <b>Informe um valor do tipo string numerica</b>
      * 
      */
-    public function checkCnpj( $cnpj) {
-        
-        if (! $this->validateCnpj($cnpj)) {
-            throw new Exception("Erro - Formato incorreto");
+    public function checkCnpj($cnpj) {
+        if ($this->isCnpj($cnpj)) {
+            $this->cnpj = $this->unmask($cnpj);
+            $this->param = $this->urlReceita . $this->cnpj;
+            $verificaCNPJ = get_object_vars($this->setUrl());
+            if (count($verificaCNPJ) == 2) {
+                throw new Exception("Erro - " . $verificaCNPJ['message']);
+            } 
+            $this->data = $verificaCNPJ;
+            $this->data['cnpj'] = $cnpj;
         }
-        
-        $this->cnpj = Utils::unmask($cnpj);
-        $this->param = $this->urlReceita. $this->cnpj;
-        
-        $verificaCNPJ = get_object_vars($this->setUrl());
-        if (count($verificaCNPJ) == 2)
-        {
-             throw new Exception("Erro - ".$verificaCNPJ['message']);
-        }
-    }
-
-    /**
-     * @return callback
-     */
-    private function callback() {
-        
-        return $this->setUrl();
     }
 
     private function setUrl() {
-
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->param);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        return $retorno = json_decode(curl_exec($ch));
-
-
+        $curl_result = curl_exec($ch);
+        $retorno = json_decode($curl_result);
         curl_close($ch);
+        if (!$retorno) {
+            return json_decode(json_encode(array("status" => "ERROR", "message" => $curl_result)));
+        }
+        return $retorno;
     }
-    
-    public function dataSituacao()
-    {
-        return $this->callback()->data_situacao;
+
+    public function dataSituacao() {
+        return $this->data["data_situacao"];
     }
-    public function complemento()
-    {
-        return $this->callback()->complemento;
+
+    public function complemento() {
+        return $this->data["complemento"];
     }
-    public function nome()
-    {
-        return $this->callback()->nome;
+
+    public function nome() {
+        return $this->data["nome"];
     }
-    public function uf()
-    {
-        return $this->callback()->uf;
+
+    public function uf() {
+        return $this->data["uf"];
     }
-    public function telefone()
-    {
-        return $this->callback()->telefone;
+
+    public function telefone() {
+        return $this->data["telefone"];
     }
-    public function email()
-    {
-        return $this->callback()->email;
+
+    public function email() {
+        return $this->data["email"];
     }
-    public function situacao()
-    {
-        return $this->callback()->situacao;
+
+    public function situacao() {
+        return $this->data["situacao"];
     }
-    public function bairro()
-    {
-        return $this->callback()->bairro;
+
+    public function bairro() {
+        return $this->data["bairro"];
     }
-    public function logradouro()
-    {
-        return $this->callback()->logradouro;
+
+    public function logradouro() {
+        return $this->data["logradouro"];
     }
-    public function numero()
-    {
-        return $this->callback()->numero;
+
+    public function numero() {
+        return $this->data["numero"];
     }
-    public function cep()
-    {
-        return $this->callback()->cep;
+
+    public function cep() {
+        return $this->data["cep"];
     }
-    public function municipio()
-    {
-        return $this->callback()->municipio;
+
+    public function municipio() {
+        return $this->data["municipio"];
     }
-    public function abertura()
-    {
-        return $this->callback()->abertura;
+
+    public function abertura() {
+        return $this->data["abertura"];
     }
-    public function naturezaJuridica()
-    {
-        return $this->callback()->natureza_juridica;
+
+    public function naturezaJuridica() {
+        return $this->data["natureza_juridica"];
     }
-    public function fantasia()
-    {
-        return $this->callback()->fantasia;
+
+    public function fantasia() {
+        return $this->data["fantasia"];
     }
-    public function cnpj()
-    {
-        return $this->callback()->cnpj;
+
+    public function cnpj() {
+        return $this->data["cnpj"];
     }
-    public function ultimaAtualizacao()
-    {
-        return $this->callback()->ultima_atualizacao;
+
+    public function ultimaAtualizacao() {
+        return $this->data["ultima_atualizacao"];
     }
-    public function status()
-    {
-        return $this->callback()->status;
+
+    public function status() {
+        return $this->data["status"];
     }
-    public function tipo()
-    {
-        return $this->callback()->tipo;
+
+    public function tipo() {
+        return $this->data["tipo"];
     }
-    public function efr()
-    {
-        return $this->callback()->efr;
+
+    public function efr() {
+        return $this->data["efr"];
     }
-    public function motivoSituacao()
-    {
-        return $this->callback()->motivo_situacao;
+
+    public function motivoSituacao() {
+        return $this->data["motivo_situacao"];
     }
-    public function situacaoEspecial()
-    {
-        return $this->callback()->situacao_especial;
+
+    public function situacaoEspecial() {
+        return $this->data["situacao_especial"];
     }
-    public function dataSituacaoEspecial()
-    {
-        return $this->callback()->data_situacao_especial;
+
+    public function dataSituacaoEspecial() {
+        return $this->data["data_situacao_especial"];
     }
-    public function capitalSocial()
-    {
-        return $this->callback()->capital_social;
+
+    public function capitalSocial() {
+        return $this->data["capital_social"];
     }
-    public function atividadePrincipal()
-    {
-        return $this->callback()->atividade_principal;
+
+    public function atividadePrincipal() {
+        return $this->data["atividade_principal"];
     }
-    public function qsa()
-    {
-        return $this->callback()->qsa;
+
+    public function qsa() {
+        return $this->data["qsa"];
     }
-    public function atividadesSecundarias()
-    {
-        return $this->callback()->atividades_secundarias;
+
+    public function atividadesSecundarias() {
+        return $this->data["atividades_secundarias"];
     }
 
 }
